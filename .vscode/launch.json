@@ -112,6 +112,43 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'day06-part2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day06-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "src/res/day06-input"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'day06-part2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=day06-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug executable 'day03-part1'",
             "cargo": {
                 "args": [
@@ -257,7 +294,7 @@
                 "args": [
                     "build",
                     "--bin=day06-part1",
-                    "--package=advent-of-code",
+                    "--package=advent-of-code"
                 ],
                 "filter": {
                     "kind": "bin"
