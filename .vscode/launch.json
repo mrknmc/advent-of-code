@@ -112,6 +112,41 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'day07-part2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day07-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'day07-part2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=day07-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug executable 'day06-part2'",
             "cargo": {
                 "args": [
@@ -135,6 +170,41 @@
                     "test",
                     "--no-run",
                     "--bin=day06-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'day08-part1'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day08-part1",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'day08-part1'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=day08-part1",
                     "--package=advent-of-code"
                 ],
                 "filter": {
@@ -205,6 +275,43 @@
                     "test",
                     "--no-run",
                     "--bin=day02-part1",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'day08-part2'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day08-part2",
+                    "--package=advent-of-code"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "src/res/day08-simple-input"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'day08-part2'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=day08-part2",
                     "--package=advent-of-code"
                 ],
                 "filter": {
@@ -298,9 +405,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [
-                "src/res/day07-input"
-            ],
+            "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
