@@ -5,28 +5,28 @@ use std::io::{BufRead, BufReader};
 use std::collections::VecDeque;
 
 struct World {
-    cars: Vec<Car>,
+    carts: Vec<Cart>,
     tracks: Vec<Vec<Track>>,
 }
 
 impl World { 
 
     fn has_crash(&self) -> bool {
-        self.cars.iter().enumerate()
-            .any(|(c1_id, c1)| self.cars.iter().enumerate()
+        self.carts.iter().enumerate()
+            .any(|(c1_id, c1)| self.carts.iter().enumerate()
                 .any(|(c2_id, c2)| c1_id != c2_id && c1.crashed_with(&c2)))
     }
 
-    fn crash_location(&self) -> Option<(usize, &Car)> {
-        self.cars.iter().enumerate()
-            .find(|(c1_id, c1)| self.cars.iter().enumerate()
+    fn crash_location(&self) -> Option<(usize, &Cart)> {
+        self.carts.iter().enumerate()
+            .find(|(c1_id, c1)| self.carts.iter().enumerate()
                 .any(|(c2_id, c2)| c1_id != &c2_id && c1.crashed_with(&c2)))
     }
 
     fn tick(&mut self) {
-        for mut car in self.cars.as_mut_slice() {
-            let track = &self.tracks[car.x][car.y];
-            car.tick(&track);
+        for mut cart in self.carts.as_mut_slice() {
+            let track = &self.tracks[cart.x][cart.y];
+            cart.tick(&track);
         }
     }
 }
@@ -40,7 +40,7 @@ impl fmt::Debug for World {
                 vec[j][i] = format!("{:?}", t);
             }
         }
-        for c in &self.cars {
+        for c in &self.carts {
             // coords transposed at this point
             vec[c.y][c.x] = format!("{:?}", c.direction);
         }
@@ -97,19 +97,19 @@ impl Turn {
 
 #[derive(Copy, Clone)]
 enum Direction {
-    FaceUp,
-    FaceDown,
-    FaceLeft,
-    FaceRight,
+    North,
+    South,
+    West,
+    East,
 }
 
 impl fmt::Debug for Direction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let c = match self {
-            Direction::FaceUp => '^',
-            Direction::FaceDown => 'v',
-            Direction::FaceLeft => '<',
-            Direction::FaceRight => '>',
+            Direction::North => '^',
+            Direction::South => 'v',
+            Direction::West => '<',
+            Direction::East => '>',
         };
         write!(f, "{}", c)
     }
@@ -119,19 +119,19 @@ impl Direction {
 
     fn angle(&self) -> i32 {
         match self {
-            Direction::FaceUp => 90,
-            Direction::FaceDown => -90,
-            Direction::FaceLeft => 180,
-            Direction::FaceRight => 0,
+            Direction::North => 90,
+            Direction::South => -90,
+            Direction::West => 180,
+            Direction::East => 0,
         }
     }
 
     fn from_angle(angle: i32) -> Direction {
         match angle {
-            0 | 360 | -360 => Direction::FaceRight,
-            90 | -270 => Direction::FaceUp,
-            180 | -180 => Direction::FaceLeft,
-            270 | -90 => Direction::FaceDown,
+            0 | 360 | -360 => Direction::East,
+            90 | -270 => Direction::North,
+            180 | -180 => Direction::West,
+            270 | -90 => Direction::South,
             _ => { panic!("Unexpected number of degrees: {}", angle); }
         }
     }
@@ -142,48 +142,48 @@ impl Direction {
 }
 
 #[derive(Debug)]
-struct Car {
+struct Cart {
     x: usize,
     y: usize,
     direction: Direction,
     turns: VecDeque<Turn>,
 }
 
-impl Car {
+impl Cart {
 
-    fn new(x: usize, y: usize, direction: Direction) -> Car {
-        Car { x, y, direction, turns: vec!(Turn::Left, Turn::Straight, Turn::Right).into_iter().collect() }
+    fn new(x: usize, y: usize, direction: Direction) -> Cart {
+        Cart { x, y, direction, turns: vec!(Turn::Left, Turn::Straight, Turn::Right).into_iter().collect() }
     }
 
     fn move_in_direction(&mut self, direction: &Direction) {
         let (x, y) = match direction {
-            Direction::FaceUp => (0, -1),
-            Direction::FaceDown => (0, 1),
-            Direction::FaceLeft => (-1, 0),
-            Direction::FaceRight => (1, 0),
+            Direction::North => (0, -1),
+            Direction::South => (0, 1),
+            Direction::West => (-1, 0),
+            Direction::East => (1, 0),
         };
         self.x = (self.x as i32 + x) as usize;
         self.y = (self.y as i32 + y) as usize;
     }
 
-    fn crashed_with(&self, other: &Car) -> bool {
+    fn crashed_with(&self, other: &Self) -> bool {
         (self.x, self.y) == (other.x, other.y)
     }
 
     fn tick(&mut self, track: &Track) {
         let new_direction = match (&self.direction, track) {
-            (_, Track::Empty) => { panic!("Car not on track!"); }
-            (Direction::FaceDown, Track::Horizontal) | (Direction::FaceUp, Track::Horizontal) => { panic!("Car verical on horizontal track"); },
-            (Direction::FaceLeft, Track::Vertical) | (Direction::FaceRight, Track::Vertical) => { panic!("Car horizontal on vertical track"); },
-            (Direction::FaceDown, Track::CurveBackward) | (Direction::FaceUp, Track::CurveForward) => { Direction::FaceRight }
-            (Direction::FaceUp, Track::CurveBackward) | (Direction::FaceDown, Track::CurveForward) => { Direction::FaceLeft }
-            (Direction::FaceRight, Track::CurveBackward) | (Direction::FaceLeft, Track::CurveForward) => { Direction::FaceDown }
-            (Direction::FaceRight, Track::CurveForward) | (Direction::FaceLeft, Track::CurveBackward) => { Direction::FaceUp }
+            (_, Track::Empty) => { panic!("Cart not on track!"); }
+            (Direction::South, Track::Horizontal) | (Direction::North, Track::Horizontal) => { panic!("Cart verical on horizontal track"); },
+            (Direction::West, Track::Vertical) | (Direction::East, Track::Vertical) => { panic!("Cart horizontal on vertical track"); },
+            (Direction::South, Track::CurveBackward) | (Direction::North, Track::CurveForward) => { Direction::East }
+            (Direction::North, Track::CurveBackward) | (Direction::South, Track::CurveForward) => { Direction::West }
+            (Direction::East, Track::CurveBackward) | (Direction::West, Track::CurveForward) => { Direction::South }
+            (Direction::East, Track::CurveForward) | (Direction::West, Track::CurveBackward) => { Direction::North }
             (direction, Track::Vertical) | (direction, Track::Horizontal) => { direction.clone() }
             (direction, Track::Intersection) => {
-                let turn = self.turns.pop_back().unwrap();
+                let turn = self.turns.pop_front().unwrap();
                 let new_direction = direction.apply(&turn);
-                self.turns.push_front(turn);
+                self.turns.push_back(turn);
                 new_direction
             }
         };
@@ -196,7 +196,7 @@ fn read_file<'a>(filename: String) -> World {
     let f = File::open(filename).expect("input file not found");
     let buf_reader = BufReader::new(f);
     let lines = buf_reader.lines().map(|s| s.unwrap());
-    let mut cars = Vec::new();
+    let mut carts = Vec::new();
     let mut tracks: Vec<Vec<Track>> = vec![vec![Track::Empty; 150]; 150];
     for (row, line) in lines.enumerate() {
         for (col, c) in line.chars().enumerate() {
@@ -207,22 +207,22 @@ fn read_file<'a>(filename: String) -> World {
                 '/' => { tracks[col][row] = Track::CurveForward; },
                 '\\' => { tracks[col][row] = Track::CurveBackward; },
                 '+' => { tracks[col][row] = Track::Intersection; },
-                'v' => { cars.push(Car::new(col, row, Direction::FaceDown)); },
-                '^' => { cars.push(Car::new(col, row, Direction::FaceUp)); },
-                '>' => { cars.push(Car::new(col, row, Direction::FaceRight)); },
-                '<' => { cars.push(Car::new(col, row, Direction::FaceLeft)); },
+                'v' => { carts.push(Cart::new(col, row, Direction::South)); },
+                '^' => { carts.push(Cart::new(col, row, Direction::North)); },
+                '>' => { carts.push(Cart::new(col, row, Direction::East)); },
+                '<' => { carts.push(Cart::new(col, row, Direction::West)); },
                 c => { panic!("Unknown character: {}", c); }
             }
         }
     }
 
-    // Add tracks to where the cars are
-    for car in &cars {
-        tracks[car.x][car.y] = match (
-            &tracks[car.x - 1][car.y],
-            &tracks[car.x + 1][car.y],
-            &tracks[car.x][car.y - 1],
-            &tracks[car.x][car.y + 1]
+    // Add tracks to where the carts are
+    for cart in &carts {
+        tracks[cart.x][cart.y] = match (
+            &tracks[cart.x - 1][cart.y],
+            &tracks[cart.x + 1][cart.y],
+            &tracks[cart.x][cart.y - 1],
+            &tracks[cart.x][cart.y + 1]
         ) {
             // left, right, top, bottom
             (Track::Horizontal, Track::Horizontal, Track::Vertical, Track::Vertical) => Track::Intersection,
@@ -239,10 +239,10 @@ fn read_file<'a>(filename: String) -> World {
             (_, _, Track::Intersection, Track::Intersection) => Track::Vertical,
             (_, _, Track::Intersection, Track::Vertical) => Track::Vertical,
             (_, _, Track::Vertical, Track::Intersection) => Track::Vertical,
-            pattern => { panic!("Unrecognized pattern around car: {:?} on coords: {}, {}", pattern, car.x, car.y); }
+            pattern => { panic!("Unrecognized pattern around cart: {:?} on coords: {}, {}", pattern, cart.x, cart.y); }
         };
     }
-    World { cars, tracks, }
+    World { carts, tracks, }
 }
 
 
@@ -250,9 +250,10 @@ fn main() {
     let filename = env::args().nth(1).expect("No argument filename passed");
     let mut world = read_file(filename);
     while !world.has_crash() {
-        println!("{:?}", world);
+        // println!("{:?}", world);
         world.tick();
+        // std::thread::sleep(std::time::Duration::from_millis(100));
     }
     println!("{:?}", world);
-    // println!("{:?}", world.crash_location());
+    println!("{:?}", world.crash_location());
 }
