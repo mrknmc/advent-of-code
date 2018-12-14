@@ -1,26 +1,9 @@
 use std::env;
+use std::fmt;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::collections::VecDeque;
 
-#[derive(Debug)]
-enum Turn {
-    Left,
-    Right,
-    Straight,
-}
-
-impl Turn {
-    fn angle(&self) -> i32 {
-        match self {
-            Turn::Left => 90,
-            Turn::Right => -90,
-            Turn::Straight => 0
-        }
-    }
-}
-
-#[derive(Debug)]
 struct World {
     cars: Vec<Car>,
     tracks: Vec<Vec<Track>>,
@@ -48,7 +31,30 @@ impl World {
     }
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Debug for World {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut vec = vec![vec![String::new(); 150]; 150];
+        for (i, tracks) in self.tracks.iter().enumerate() {
+            for (j, t) in tracks.iter().enumerate() {
+                // transpose
+                vec[j][i] = format!("{:?}", t);
+            }
+        }
+        for c in &self.cars {
+            // coords transposed at this point
+            vec[c.y][c.x] = format!("{:?}", c.direction);
+        }
+        for row in vec {
+            for col in row {
+                write!(f, "{}", col);
+            }
+            writeln!(f, "");
+        }
+        writeln!(f, "")
+    }
+}
+
+#[derive(Clone)]
 enum Track {
     Empty,
     Horizontal,
@@ -58,12 +64,55 @@ enum Track {
     CurveBackward
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Debug for Track {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let c = match self {
+            Track::Empty => ' ',
+            Track::Horizontal => '-',
+            Track::Vertical => '|',
+            Track::Intersection => '+',
+            Track::CurveForward => '/',
+            Track::CurveBackward => '\\',
+        };
+        write!(f, "{}", c)
+    }
+}
+
+#[derive(Debug)]
+enum Turn {
+    Left,
+    Right,
+    Straight,
+}
+
+impl Turn {
+    fn angle(&self) -> i32 {
+        match self {
+            Turn::Left => 90,
+            Turn::Right => -90,
+            Turn::Straight => 0
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 enum Direction {
     FaceUp,
     FaceDown,
     FaceLeft,
     FaceRight,
+}
+
+impl fmt::Debug for Direction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let c = match self {
+            Direction::FaceUp => '^',
+            Direction::FaceDown => 'v',
+            Direction::FaceLeft => '<',
+            Direction::FaceRight => '>',
+        };
+        write!(f, "{}", c)
+    }
 }
 
 impl Direction {
@@ -79,15 +128,10 @@ impl Direction {
 
     fn from_angle(angle: i32) -> Direction {
         match angle {
-            -360 => Direction::FaceRight,
-            -270 => Direction::FaceUp,
-            -180 => Direction::FaceRight,
-            -90 => Direction::FaceDown,
-            0 => Direction::FaceRight,
-            90 => Direction::FaceUp,
-            180 => Direction::FaceLeft,
-            270 => Direction::FaceDown,
-            360 => Direction::FaceRight,
+            0 | 360 | -360 => Direction::FaceRight,
+            90 | -270 => Direction::FaceUp,
+            180 | -180 => Direction::FaceLeft,
+            270 | -90 => Direction::FaceDown,
             _ => { panic!("Unexpected number of degrees: {}", angle); }
         }
     }
@@ -118,8 +162,8 @@ impl Car {
             Direction::FaceLeft => (-1, 0),
             Direction::FaceRight => (1, 0),
         };
-        self.x += x;
-        self.y += y;
+        self.x = (self.x as i32 + x) as usize;
+        self.y = (self.y as i32 + y) as usize;
     }
 
     fn crashed_with(&self, other: &Car) -> bool {
@@ -127,46 +171,15 @@ impl Car {
     }
 
     fn tick(&mut self, track: &Track) {
-        let new_direction = match (self.direction, track) {
+        let new_direction = match (&self.direction, track) {
             (_, Track::Empty) => { panic!("Car not on track!"); }
             (Direction::FaceDown, Track::Horizontal) | (Direction::FaceUp, Track::Horizontal) => { panic!("Car verical on horizontal track"); },
             (Direction::FaceLeft, Track::Vertical) | (Direction::FaceRight, Track::Vertical) => { panic!("Car horizontal on vertical track"); },
-            (Direction::FaceUp, Track::CurveForward) => {
-                // self.move_by(1, 0);
-                Direction::FaceRight
-            }
-            (Direction::FaceUp, Track::CurveBackward) => {
-                // self.move_by(-1, 0);
-                Direction::FaceLeft
-            },
-            (Direction::FaceDown, Track::CurveForward) => {
-                // self.move_by(-1, 0);
-                Direction::FaceLeft
-            }
-            (Direction::FaceDown, Track::CurveBackward) => {
-                // self.move_by(1, 0);
-                Direction::FaceRight
-            }
-            (Direction::FaceRight, Track::CurveForward) => {
-                // self.move_by(0, -1);
-                Direction::FaceUp
-            }
-            (Direction::FaceRight, Track::CurveBackward) => {
-                // self.move_by(0, 1);
-                Direction::FaceDown
-            }
-            (Direction::FaceLeft, Track::CurveForward) => {
-                // self.move_by(0, 1);
-                Direction::FaceDown
-            }
-            (Direction::FaceLeft, Track::CurveBackward) => {
-                // self.move_by(0, -1);
-                Direction::FaceUp
-            }
-            (direction, Track::Vertical) | (direction, Track::Horizontal) => {
-                // self.move_by(1, 0);
-                direction
-            }
+            (Direction::FaceDown, Track::CurveBackward) | (Direction::FaceUp, Track::CurveForward) => { Direction::FaceRight }
+            (Direction::FaceUp, Track::CurveBackward) | (Direction::FaceDown, Track::CurveForward) => { Direction::FaceLeft }
+            (Direction::FaceRight, Track::CurveBackward) | (Direction::FaceLeft, Track::CurveForward) => { Direction::FaceDown }
+            (Direction::FaceRight, Track::CurveForward) | (Direction::FaceLeft, Track::CurveBackward) => { Direction::FaceUp }
+            (direction, Track::Vertical) | (direction, Track::Horizontal) => { direction.clone() }
             (direction, Track::Intersection) => {
                 let turn = self.turns.pop_back().unwrap();
                 let new_direction = direction.apply(&turn);
@@ -229,7 +242,6 @@ fn read_file<'a>(filename: String) -> World {
             pattern => { panic!("Unrecognized pattern around car: {:?} on coords: {}, {}", pattern, car.x, car.y); }
         };
     }
-
     World { cars, tracks, }
 }
 
@@ -238,7 +250,9 @@ fn main() {
     let filename = env::args().nth(1).expect("No argument filename passed");
     let mut world = read_file(filename);
     while !world.has_crash() {
+        println!("{:?}", world);
         world.tick();
     }
-    println!("{:?}", world.crash_location());
+    println!("{:?}", world);
+    // println!("{:?}", world.crash_location());
 }
