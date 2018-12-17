@@ -24,9 +24,19 @@ impl World {
     }
 
     fn tick(&mut self) {
-        for mut cart in self.carts.as_mut_slice() {
-            let track = &self.tracks[cart.x][cart.y];
-            cart.tick(&track);
+        self.carts.sort_by(|a, b| (a.y, a.x).cmp(&(b.y, b.x)));
+        for i in 0..self.carts.len() {
+            let track = {
+                let cart = &self.carts[i];
+                &self.tracks[cart.x][cart.y]
+            };
+            {
+                let mut cart = self.carts.get_mut(i).unwrap();
+                cart.tick(&track);
+            }
+            if self.has_crash() {
+                return;
+            }
         }
     }
 }
@@ -46,9 +56,9 @@ impl fmt::Debug for World {
         }
         for row in vec {
             for col in row {
-                write!(f, "{}", col);
+                write!(f, "{}", col)?;
             }
-            writeln!(f, "");
+            writeln!(f, "")?;
         }
         writeln!(f, "")
     }
@@ -78,7 +88,7 @@ impl fmt::Debug for Track {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Turn {
     Left,
     Right,
@@ -95,7 +105,7 @@ impl Turn {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 enum Direction {
     North,
     South,
@@ -218,28 +228,9 @@ fn read_file<'a>(filename: String) -> World {
 
     // Add tracks to where the carts are
     for cart in &carts {
-        tracks[cart.x][cart.y] = match (
-            &tracks[cart.x - 1][cart.y],
-            &tracks[cart.x + 1][cart.y],
-            &tracks[cart.x][cart.y - 1],
-            &tracks[cart.x][cart.y + 1]
-        ) {
-            // left, right, top, bottom
-            (Track::Horizontal, Track::Horizontal, Track::Vertical, Track::Vertical) => Track::Intersection,
-            (Track::Horizontal, Track::Horizontal, _, _) => Track::Horizontal,
-            (_, _, Track::Vertical, Track::Vertical) => Track::Vertical,
-            (Track::Horizontal, _, Track::Vertical, _) => Track::CurveForward,
-            (Track::Horizontal, _, _, Track::Vertical) => Track::CurveBackward,
-            (_, Track::Horizontal, Track::Vertical, _) => Track::CurveBackward,
-            (_, Track::Horizontal, _, Track::Vertical) => Track::CurveForward,
-            (Track::Intersection, Track::Intersection, Track::Intersection, Track::Intersection) => Track::Vertical,
-            (Track::Intersection, Track::Intersection, _, _) => Track::Horizontal,
-            (Track::Intersection, Track::Horizontal, _, _) => Track::Horizontal,
-            (Track::Horizontal, Track::Intersection, _, _) => Track::Horizontal,
-            (_, _, Track::Intersection, Track::Intersection) => Track::Vertical,
-            (_, _, Track::Intersection, Track::Vertical) => Track::Vertical,
-            (_, _, Track::Vertical, Track::Intersection) => Track::Vertical,
-            pattern => { panic!("Unrecognized pattern around cart: {:?} on coords: {}, {}", pattern, cart.x, cart.y); }
+        tracks[cart.x][cart.y] = match cart.direction {
+            Direction::South | Direction::North => Track::Vertical,
+            Direction::West | Direction::East => Track::Horizontal,
         };
     }
     World { carts, tracks, }
@@ -250,9 +241,7 @@ fn main() {
     let filename = env::args().nth(1).expect("No argument filename passed");
     let mut world = read_file(filename);
     while !world.has_crash() {
-        // println!("{:?}", world);
         world.tick();
-        // std::thread::sleep(std::time::Duration::from_millis(100));
     }
     println!("{:?}", world);
     println!("{:?}", world.crash_location());
